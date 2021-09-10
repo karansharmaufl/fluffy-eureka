@@ -1,6 +1,8 @@
 const express = require("express");
 const path = require("path");
 const app = express();
+const AWS = require("aws-sdk");
+var s3 = new AWS.S3();
 
 // #############################################################################
 // Logs all request paths and method
@@ -30,19 +32,34 @@ app.use(express.static("public", options));
 // Catch all handler for all other request.
 app.use("*", (req, res) => {
   console.log(process.env);
-  res
-    .json({
-      at: new Date().toISOString(),
-      method: req.method,
-      hostname: req.hostname,
-      ip: req.ip,
-      query: req.query,
-      headers: req.headers,
-      cookies: req.cookies,
-      params: req.params,
-      env: process.env,
-    })
-    .end();
+  listBuckets().then((d) => {
+    res
+      .json({
+        at: new Date().toISOString(),
+        method: req.method,
+        hostname: req.hostname,
+        ip: req.ip,
+        query: req.query,
+        headers: req.headers,
+        cookies: req.cookies,
+        params: req.params,
+        env: process.env,
+      })
+      .end();
+  });
 });
+
+const listBuckets = () => {
+  return new Promise((res, rej) => {
+    var params = {};
+    s3.listBuckets(params, function (err, data) {
+      if (err) console.log(err, err.stack);
+      else {
+        console.log(data); // successful response
+        res(data);
+      }
+    });
+  });
+};
 
 module.exports = app;
